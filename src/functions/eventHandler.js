@@ -1,6 +1,5 @@
-const { app, output } = require('@azure/functions');
+const { app } = require('@azure/functions');
 const { Client } = require('pg');  // PostgreSQL client
-
 
 // PostgreSQL connection settings
 const pgClient = new Client({
@@ -8,14 +7,13 @@ const pgClient = new Client({
     host: process.env.PG_HOST,            // PostgreSQL host from environment variables
     database: process.env.PG_DATABASE,    // PostgreSQL database name from environment variables
     password: process.env.PG_PASSWORD,    // PostgreSQL password from environment variables
-    port: process.env.PG_PORT || 5432,                          // Replace with your PostgreSQL port (default is 5432)
+    port: process.env.PG_PORT || 5432,    // PostgreSQL port (default is 5432)
 });
 
 // Connect to PostgreSQL
 pgClient.connect();
 
 app.eventGrid('blogicHandlerTest', {
-    extraOutputs: [cosmosOutput],  // Add Cosmos DB as an output
     handler: async (eventGridEvent, context) => {
         try {
             // Log the event type and subject for context
@@ -31,6 +29,7 @@ app.eventGrid('blogicHandlerTest', {
 
                 const deviceData = eventGridEvent.data;  // The actual data for the device
                 const deviceId = deviceData.machineData.DeviceID;  // e.g., "22110"
+
                 // Extract date and time (hh:mm) from the timestamp
                 const timestamp = new Date(deviceData.machineData.TimeStamp);
                 const date = timestamp.toISOString().split('T')[0];  // YYYY-MM-DD format
@@ -51,13 +50,15 @@ app.eventGrid('blogicHandlerTest', {
                      cam_statistics_percent_ok, cam_statistics_percent_returns, 
                      cam_statistics_percent_waste, cam_statistics_percent_double, 
                      cam_statistics_percent_bellyback, cam_statistics_percent_head, 
-                     cam_statistics_percent_misc, event_type, event_time
+                     cam_statistics_percent_misc, event_time
                  ) VALUES (
-                     $1, $2, $3, $4, $5, $6, TO_CHAR($5, 'HH24:MI'), $7, $8, $9, $10, 
-                     $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, 
-                     $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35
+                     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
+                     $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
+                     $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, 
+                     $31, $32, $33, $34
                  )
              `;
+
                 // Prepare the data to insert
                 const values = [
                     eventGridEvent.id,
@@ -93,7 +94,6 @@ app.eventGrid('blogicHandlerTest', {
                     deviceData.camStatistics_Percent.bellyback,
                     deviceData.camStatistics_Percent.head,
                     deviceData.camStatistics_Percent.misc,
-                    eventGridEvent.type,
                     eventGridEvent.time
                 ];
 
